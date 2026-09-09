@@ -19,10 +19,10 @@ Measured by CI with `python scripts/code_stats.py`:
 
 | Area | Files | Physical lines | Non-blank lines |
 | --- | ---: | ---: | ---: |
-| Core `src/poyto/*.py` | 20 | 2,897 | 2,511 |
+| Core `src/poyto/*.py` | 20 | 2,912 | 2,525 |
 | Resource wrappers `src/poyto/resources/*.py` | 7 | 485 | 400 |
-| **Source total** | **27** | **3,382** | **2,911** |
-| Tests | 10 | 1,273 | 1,041 |
+| **Source total** | **27** | **3,397** | **2,925** |
+| Tests | 10 | 1,416 | 1,155 |
 
 Per-source-file snapshot:
 
@@ -30,7 +30,7 @@ Per-source-file snapshot:
 | --- | ---: | ---: | --- |
 | `src/poyto/control_exec.py` | 380 | 345 | Codex-style Linux command sessions and stdin continuation |
 | `src/poyto/control_fs.py` | 306 | 272 | bounded root-scoped file reads and patch application |
-| `src/poyto/mcp_server.py` | 295 | 256 | Poyto MCP tool surface and composable server builder |
+| `src/poyto/mcp_server.py` | 310 | 270 | Poyto MCP tool surface and composable server builder |
 | `src/poyto/control_plugin.py` | 274 | 241 | authenticated Poyto Server Control plugin surface |
 | `src/poyto/_http.py` | 215 | 191 | HTTP transport, headers, auth exchange/refresh/logout |
 | `src/poyto/auto.py` | 198 | 179 | credential loading, persistence, auto-refresh, 401 retry |
@@ -68,7 +68,7 @@ These values are a snapshot, not a marketing metric. `python scripts/code_stats.
 | Apple id-token login | `login_with_apple()`, `login-apple` | **Observed success** |
 | Receive/store access + refresh pair | `AuthSession`, `SessionStore` | **Observed success** for issuance |
 | Refresh shortly before expiry | automatic lifecycle | **Implemented / inferred** |
-| One refresh + retry after authenticated 401 | automatic lifecycle | Local policy; exchange inferred |
+| One refresh + retry after authenticated 401 | automatic lifecycle | Local policy; exchange observed success for the recorded session |
 | Persist rotated refresh pair | automatic lifecycle | **Implemented / inferred** |
 | Remote global logout | `logout(local_only=False)` | **Observed** |
 | Local-only logout | `logout(local_only=True)` | Local feature |
@@ -83,7 +83,15 @@ private file for the existing token-file login. The standalone script uses ADB +
 This is a local extraction observation, not evidence of credential validity,
 initial Apple login automation, or storage compatibility across app versions.
 
-Critical boundary: refresh-token issuance is established, while the exact POYP refresh exchange is not. The refresh request follows standard Supabase/GoTrue behavior and remains inferred.
+The refresh exchange is recorded as **observed success** for an authorized session
+on 2026-09-09 in [Refresh tokens](refresh-tokens.md). Broader server reuse and
+invalidation policies remain unknown.
+
+Dedicated MCP tools reload an existing configured `POYTO_SESSION_FILE` before
+each call and use its whole pair ahead of environment bootstrap tokens. Calls
+are serialized inside one MCP process to prevent concurrent reuse during rotation.
+This is a local, offline-tested policy; Python/CLI priority is unchanged and
+separate processes/shell commands are not synchronized.
 
 ## Account, balances and notifications
 

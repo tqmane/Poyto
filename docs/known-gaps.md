@@ -29,13 +29,16 @@ transactional snapshot guarantee. Extracting a token
 pair does not establish that either credential is still accepted by POYP, and
 does not automate the initial Apple login.
 
-### Refresh-token exchange is not directly established
+### Refresh-token server policies remain partially unknown
 
-Poyto implements the standard Supabase/GoTrue-style refresh exchange because the authentication backend is Supabase-based and issues refresh tokens. The exact POYP refresh request/response behavior is still treated as **inferred**, not guaranteed.
+The refresh request and one successful exchange were recorded on 2026-09-09;
+see [Refresh tokens](refresh-tokens.md). This does not establish every server
+reuse, expiry or invalidation policy. Dedicated MCP tools serialize calls within
+one process and reload the configured saved pair, but separate MCP processes,
+shell/CLI commands and other hosts are not coordinated by that lock.
 
 Unknown details include:
 
-- whether POYP changes the standard request shape
 - exact refresh-token reuse/rotation behavior in this project
 - project-specific refresh-token invalidation policy
 - server behavior after simultaneous refreshes

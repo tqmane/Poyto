@@ -146,6 +146,12 @@ The effective access-token priority is:
 
 An explicitly supplied `refresh_token=` can accompany the selected source.
 
+Dedicated MCP tools select an existing `POYTO_SESSION_FILE` explicitly on each
+call (unless `POYTO_AUTO_LOAD_SESSION=false`). This keeps the latest rotated
+pair ahead of stale environment bootstrap tokens. Their load/refresh/save calls
+are serialized within one MCP process. This does not change Python/CLI source
+priority or synchronize separate processes. See [MCP refresh policy](refresh-tokens.md#mcp-session-reload-policy).
+
 ## Apple exchange
 
 The established POYP exchange observed in authorized traffic is:

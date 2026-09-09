@@ -2,17 +2,32 @@ from __future__ import annotations
 
 import argparse
 import os
+import threading
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Any
 
 from .auto import PoytoClient
 from .config import env_bool
 
+_SESSION_LOCK = threading.Lock()
+
 
 def _client_call(method: str, /, *args: Any, **kwargs: Any) -> Any:
-    """Run one Poyto client call using the normal persisted-session policy."""
-    with PoytoClient() as client:
-        return getattr(client, method)(*args, **kwargs)
+    """Reload the configured MCP session and keep refresh/save calls in order."""
+    with _SESSION_LOCK:
+        session_file = os.getenv("POYTO_SESSION_FILE")
+        options: dict[str, Any] = {}
+        if (
+            session_file
+            and env_bool("POYTO_AUTO_LOAD_SESSION", default=True)
+            and Path(session_file).expanduser().exists()
+        ):
+            # Select the entire persisted pair explicitly. Environment bootstrap
+            # tokens must not replace a pair rotated by a previous MCP call.
+            options["token_file"] = Path(session_file).expanduser()
+        with PoytoClient(**options) as client:
+            return getattr(client, method)(*args, **kwargs)
 
 
 def _require_confirmation(confirm: bool, action: str) -> None:

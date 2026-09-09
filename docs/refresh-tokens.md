@@ -84,6 +84,22 @@ Manual refresh remains available:
 session = client.refresh()
 ```
 
+## MCP session reload policy
+
+When `POYTO_SESSION_FILE` is set and that file exists, dedicated MCP tools load
+its access/refresh pair on every call. The pair takes precedence over environment
+bootstrap tokens, so an old `POYTO_ACCESS_TOKEN`, `POYTO_REFRESH_TOKEN` or token-file
+setting does not replace credentials persisted by a previous refresh. If the
+configured file is absent, the normal environment bootstrap policy applies.
+`POYTO_AUTO_LOAD_SESSION=false` disables this preference; save/refresh opt-outs
+remain respected. Explicit Python/CLI credential priority is unchanged.
+
+Dedicated Poyto tool calls in one MCP process are serialized from client creation
+through refresh and persistence. This prevents overlapping calls from refreshing
+the same old pair. It also serializes their API requests. Shell commands, separate
+MCP processes, other hosts and external file writers do not participate in this
+process-local lock. This is offline-tested client policy, not new POYP evidence.
+
 ## Token storage and concurrency
 
 With rotation, two processes refreshing the same session can race. Supabase has reuse/recovery behavior for legitimate races, but applications should not rely on it as a locking mechanism. Prefer one active session store per independently authenticated client/process when possible.
