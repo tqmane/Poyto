@@ -1,5 +1,3 @@
-from unittest.mock import Mock
-
 from __future__ import annotations
 
 import json
@@ -37,26 +35,34 @@ def test_cli_settlement_claim_requires_yes() -> None:
     parser = build_parser()
     args = parser.parse_args(["settlement-claim", "market-id", "3"])
 
-    client = Mock(spec=PoytoClient)
+    class Client:
+        def claim_settlement(self, market_id: str, position_index: int):
+            pytest.fail("claim_settlement should not be called without --yes")
 
     with pytest.raises(SystemExit):
-        execute(parser, args, client)
+        execute(parser, args, Client())  # type: ignore[arg-type]
 
-    client.claim_settlement.assert_not_called()
 
 def test_cli_settlement_claim_dispatches() -> None:
     parser = build_parser()
     args = parser.parse_args(["settlement-claim", "market-id", "3", "--yes"])
 
-    client = Mock(spec=PoytoClient)
-    client.claim_settlement.return_value = {
+    class Client:
+        def claim_settlement(self, market_id: str, position_index: int):
+            return {"marketId": market_id, "positionIndex": position_index}
+
+    assert execute(parser, args, Client()) == {  # type: ignore[arg-type]
         "marketId": "market-id",
         "positionIndex": 3,
     }
 
-    assert execute(parser, args, client) == {
-        "marketId": "market-id",
-        "positionIndex": 3,
-    }
 
-    client.claim_settlement.assert_called_once_with("market-id", 3)
+@pytest.mark.anyio
+async def test_mcp_exposes_settlement_claim_as_confirmed_mutation() -> None:
+    server = build_server(read_only=False)
+    tools = {tool.name: tool for tool in await server.list_tools()}
+    assert "settlement_claim" in tools
+    assert tools["settlement_claim"].annotations
+    assert tools["settlement_claim"].annotations.readOnlyHint is False
+    assert tools["settlement_claim"].annotations.destructiveHint is True
+
