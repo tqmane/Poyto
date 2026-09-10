@@ -1,9 +1,8 @@
 
 from __future__ import annotations
 
-from unittest.mock import Mock
-
 import json
+from unittest.mock import Mock
 
 import httpx
 import pytest
@@ -11,7 +10,6 @@ import pytest
 from poyto import PoytoClient
 from poyto.cli_dispatch import execute
 from poyto.cli_parser import build_parser
-from poyto.mcp_server import build_server
 
 
 def test_client_claim_settlement_matches_observed_shape() -> None:
