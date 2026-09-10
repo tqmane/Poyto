@@ -236,6 +236,18 @@ def build_server(
             return _client_call("claim_loss_gacha", market_id, ticket_id, kind=kind)
 
         @mcp.tool(annotations=mutation_annotations)
+        def settlement_claim(
+            market_id: str,
+            position_index: int,
+            confirm: bool = False,
+        ) -> Any:
+            """Claim an eligible settled market payout. Requires explicit confirm=true."""
+            _require_confirmation(confirm, "settlement_claim")
+            if position_index < 0:
+                raise ValueError("position_index must be zero or greater")
+            return _client_call("claim_settlement", market_id, position_index)
+
+        @mcp.tool(annotations=mutation_annotations)
         def buy(
             market_id: str,
             position_index: int,
