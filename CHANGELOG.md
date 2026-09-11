@@ -11,6 +11,12 @@ All notable Poyto changes are recorded here.
 - Added an explicit opt-in Docker host-control overlay using host PID namespace, writable host-root mount, and `nsenter`; normal Docker mode remains unprivileged/container-scoped.
 - Kept Android/ADB/Frida as development-time API verification only; production Docker operation does not depend on an Android device.
 
+- Refactored MCP support into the dedicated `poyto.mcp` package while preserving the legacy `poyto.mcp_server` import path.
+- Added explicit read-only MCP mode and MCP tool annotations for safer agent/remote use.
+- Added first-class MCP and Docker documentation.
+- Added a minimal unprivileged Docker image and loopback-only Compose setup for read-only MCP deployment.
+- Kept generic shell/filesystem/host-root control outside the default Poyto MCP trust boundary.
+
 ## 0.1.0 — 2026-09-08
 
 Initial public client built from the supplied POYP HAR captures.

@@ -19,33 +19,31 @@ Measured by CI with `python scripts/code_stats.py`:
 
 | Area | Files | Physical lines | Non-blank lines |
 | --- | ---: | ---: | ---: |
-| Core `src/poyto/*.py` | 20 | 2,912 | 2,525 |
-| Resource wrappers `src/poyto/resources/*.py` | 7 | 485 | 400 |
-| **Source total** | **27** | **3,397** | **2,925** |
-| Tests | 10 | 1,416 | 1,155 |
+| Core/MCP source outside `resources/` | 25 | 3,281 | 2,840 |
+| Resource wrappers `src/poyto/resources/*.py` | 7 | 508 | 420 |
+| **Source total** | 32 | 3,789 | 3,260 |
+| Tests | 12 | 1,848 | 1,494 |
 
 Per-source-file snapshot:
 
 | File | Lines | Non-blank | Main responsibility |
 | --- | ---: | ---: | --- |
-| `src/poyto/control_exec.py` | 380 | 345 | Codex-style Linux command sessions and stdin continuation |
-| `src/poyto/control_fs.py` | 306 | 272 | bounded root-scoped file reads and patch application |
-| `src/poyto/mcp_server.py` | 310 | 270 | Poyto MCP tool surface and composable server builder |
-| `src/poyto/control_plugin.py` | 274 | 241 | authenticated Poyto Server Control plugin surface |
-| `src/poyto/_http.py` | 215 | 191 | HTTP transport, headers, auth exchange/refresh/logout |
-| `src/poyto/auto.py` | 198 | 179 | credential loading, persistence, auto-refresh, 401 retry |
-| `src/poyto/cli_dispatch.py` | 187 | 174 | CLI command execution |
+| `src/poyto/_http.py` | 221 | 197 | HTTP transport, headers, auth exchange/refresh/logout |
+| `src/poyto/mcp/server.py` | 388 | 341 | FastMCP server and POYP tools |
+| `src/poyto/auto.py` | 238 | 216 | credential loading, persistence, auto-refresh, 401 retry |
+| `src/poyto/cli_dispatch.py` | 202 | 189 | CLI command execution |
 | `src/poyto/token_loader.py` | 163 | 136 | token/text/file parsing |
-| `src/poyto/resources/account.py` | 147 | 117 | account, balances, notifications, referral, reward/status reads |
-| `src/poyto/cli_parser.py` | 130 | 103 | CLI arguments and command definitions |
-| `src/poyto/control_paths.py` | 127 | 108 | approved-root and host-path resolution for server control |
+| `src/poyto/resources/account.py` | 170 | 137 | account, balances, notifications, referral and claims |
+| `src/poyto/cli_parser.py` | 137 | 109 | CLI arguments and command definitions |
 | `src/poyto/resources/social.py` | 129 | 107 | users, follows, comments/social reads/writes |
-| `src/poyto/har_loader.py` | 111 | 92 | secret-safe HAR/HAR.zip session extraction |
+| `src/poyto/har_loader.py` | 111 | 92 | secret-aware HAR/HAR.zip session import |
 | `src/poyto/models.py` | 101 | 80 | typed structures |
-| `src/poyto/config.py` | 86 | 71 | environment/settings/device configuration |
+| `src/poyto/session_store.py` | 98 | 82 | persistent local session storage |
+| `src/poyto/config.py` | 89 | 74 | environment/settings/device configuration |
+| `src/poyto/mcp/config.py` | 76 | 64 | MCP environment/CLI settings |
 | `src/poyto/resources/markets.py` | 74 | 61 | markets, positions, activity, charts, prices |
-| `src/poyto/_resource.py` | 73 | 61 | shared resource typing/helpers |
-| `src/poyto/session_store.py` | 66 | 53 | persistent local session storage |
+| `src/poyto/_resource.py` | 73 | 61 | shared resource helpers/pagination helpers |
+| `src/poyto/device_store.py` | 63 | 49 | persistent app-style device identity |
 | `src/poyto/resources/trades.py` | 60 | 55 | buy/sell request wrappers |
 | `src/poyto/__init__.py` | 49 | 46 | public exports and compatibility aliases |
 | `src/poyto/token_info.py` | 43 | 32 | secret-safe token/session inspection |
@@ -53,8 +51,15 @@ Per-source-file snapshot:
 | `src/poyto/exceptions.py` | 34 | 24 | normalized exceptions |
 | `src/poyto/client.py` | 31 | 25 | low-level client composition |
 | `src/poyto/cli.py` | 28 | 22 | CLI entrypoint/output |
+| `src/poyto/mcp/__main__.py` | 26 | 18 | MCP entrypoint |
 | `src/poyto/resources/discovery.py` | 25 | 16 | home/search/discovery wrappers |
+| `src/poyto/mcp_server.py` | 20 | 15 | legacy MCP compatibility shim |
 | `src/poyto/resources/__init__.py` | 15 | 14 | resource exports |
+| `src/poyto/mcp/__init__.py` | 3 | 2 | MCP package exports |
+| `src/poyto/control_exec.py` | 380 | 345 | Server Control support |
+| `src/poyto/control_fs.py` | 306 | 272 | Server Control support |
+| `src/poyto/control_paths.py` | 127 | 108 | Server Control support |
+| `src/poyto/control_plugin.py` | 274 | 241 | Server Control support |
 
 These values are a snapshot, not a marketing metric. `python scripts/code_stats.py` is authoritative after the tree changes.
 
@@ -68,11 +73,14 @@ These values are a snapshot, not a marketing metric. `python scripts/code_stats.
 | Apple id-token login | `login_with_apple()`, `login-apple` | **Observed success** |
 | Receive/store access + refresh pair | `AuthSession`, `SessionStore` | **Observed success** for issuance |
 | Refresh shortly before expiry | automatic lifecycle | **Implemented / inferred** |
-| One refresh + retry after authenticated 401 | automatic lifecycle | Local policy; exchange observed success for the recorded session |
-| Persist rotated refresh pair | automatic lifecycle | **Implemented / inferred** |
+| One refresh + retry after authenticated 401 | automatic lifecycle | Local policy; refresh exchange established |
+| Persist newest refresh pair | automatic lifecycle | Local policy; refresh exchange established |
+| Generate once and reuse Device ID | `DeviceIdStore`, `X-POYP-Device-Id` | APK static analysis; local lifecycle implemented |
 | Remote global logout | `logout(local_only=False)` | **Observed** |
 | Local-only logout | `logout(local_only=True)` | Local feature |
 | Inspect token/session shape without leaking secrets | `session_info()`, `token_kind()` | Local feature |
+
+Critical boundary: refresh-token issuance and the refresh endpoint/request shape are established. Exact rotation/reuse, simultaneous-refresh, and broader session-invalidation policy remain unknown.
 
 Manual Android session extraction over ADB + `su` was verified on an already
 logged-in rooted emulator on 2026-09-09. The observed `RKStorage` database held
@@ -91,13 +99,14 @@ Dedicated MCP tools reload an existing configured `POYTO_SESSION_FILE` before
 each call and use its whole pair ahead of environment bootstrap tokens. Calls
 are serialized inside one MCP process to prevent concurrent reuse during rotation.
 This is a local, offline-tested policy; Python/CLI priority is unchanged and
-separate processes/shell commands are not synchronized.
+The session-store refresh lock also coordinates refreshes across processes using the same session file; unrelated operations and other hosts are not serialized by the MCP lock.
+
 
 ## Account, balances and notifications
 
 Implemented wrappers cover profile, balances, portfolio, portfolio history, balance history, balance transactions, expiring balances, missions, login streak, campaign results, provider rewards, loss-gacha status, notifications, unread count, read-all, push-token registration, blocked users, referral data and walking-challenge status.
 
-Primary implementation footprint: `resources/account.py` (106 lines), plus transport/session infrastructure.
+Primary implementation footprint: `resources/account.py` (170 lines), plus transport/session infrastructure.
 
 ## Ad rewards
 
@@ -137,6 +146,24 @@ Supported sell fields include `marketId`, `positionIndex`, `shares`, `orderSurfa
 
 Poyto does not claim complete knowledge of settlement, pricing formulas, slippage, fees, idempotency, anti-abuse, or every error response.
 
+## Settlement claims
+
+`claim_settlement(market_id, position_index)` is **Implemented / inferred**. The APK static
+inventory independently shows `POST /api/settlements/claim`, while the current JSON shape
+`{"marketId": ..., "positionIndex": ...}` comes from the contributed implementation and is
+covered by offline request-shape tests. This repository does not yet contain independent live
+request/response evidence proving that body or a successful response.
+
+`claim_settlement_split(market_id, coin_ratio, ticket_id=...)` is backed by APK static callsite and
+schema evidence for `POST /api/settlements/claim-split`. The established request keys are
+`marketId`, `coinRatio`, and optional `ticketId`; `coinRatio` accepts 0 through 100 in steps of 10.
+The APK schema also describes split payout response fields, but this repository does not yet have
+independent live request/response evidence for a successful split claim.
+
+The CLI command `settlement-claim` accepts optional `--coin-ratio` and `--ticket-id` selection and
+requires `--yes`. The MCP tool `settlement_claim` exposes the same optional selection and requires
+`confirm=true`. Server-side claim eligibility and payout rules remain unverified.
+
 ## Comments and social
 
 Implemented/observed surfaces include moderation status, comment/reply creation, edit, delete, like, follow/unfollow, user profile, follow status, team follows, followers/following, user balance history and user portfolio history.
@@ -159,9 +186,9 @@ Implemented and observed: read referral code/stats, check code availability, upd
 
 ## CLI
 
-Common commands include authentication (`login`, `login-apple`, `logout`, `refresh`), account reads, markets, market detail, activity, charts, prices, transactions, buy/sell, comments, follow/unfollow, referral operations, notification read-all, ad-reward claim, user inspection and raw requests.
+Common commands include authentication (`login`, `login-apple`, `logout`, `refresh`), account reads, markets, market detail, activity, charts, prices, transactions, buy/sell, settlement claim, comments, follow/unfollow, referral operations, notification read-all, ad-reward claim, user inspection and raw requests.
 
-CLI implementation footprint: `cli_parser.py` 116 lines + `cli_dispatch.py` 174 + `cli.py` 28 = **318 physical lines**.
+CLI implementation footprint: `cli_parser.py` 137 lines + `cli_dispatch.py` 202 + `cli.py` 28 = **367 physical lines**.
 
 State-changing commands require explicit `--yes` where defined.
 

@@ -70,6 +70,15 @@ Supported sell fields: `marketId`, `positionIndex`, `shares`, `orderSurface`, `e
 
 See [trading API evidence](trading.md) for the consolidated client/CLI/MCP/test mapping and the separate APK-static-only status of `GET /api/me/trades` and `POST /api/trades/quote`.
 
+`POST /api/settlements/claim` is present in the APK static inventory and has an
+implemented/inferred client wrapper, but it is intentionally not added to this established-route
+list until independent live request evidence is available. See [capabilities](capabilities.md) and
+[known gaps](known-gaps.md).
+
+APK static callsite/schema analysis also establishes `POST /api/settlements/claim-split` with
+`marketId`, `coinRatio`, and optional `ticketId`. `coinRatio` is an integer from 0 through 100 in
+steps of 10. This is static evidence rather than an independently observed live-success capture.
+
 ## Comments
 
 - `GET /api/comments/moderation-status`
