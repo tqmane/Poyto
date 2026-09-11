@@ -34,8 +34,9 @@ does not automate the initial Apple login.
 The refresh request and one successful exchange were recorded on 2026-09-09;
 see [Refresh tokens](refresh-tokens.md). This does not establish every server
 reuse, expiry or invalidation policy. Dedicated MCP tools serialize calls within
-one process and reload the configured saved pair, but separate MCP processes,
-shell/CLI commands and other hosts are not coordinated by that lock.
+one process and reload the configured saved pair. The session-store refresh lock
+also coordinates refreshes across local processes sharing the same session file;
+other hosts and unrelated account operations are not serialized by the MCP lock.
 
 Unknown details include:
 
@@ -87,7 +88,15 @@ Unknown or unverified:
 - minimum and maximum order sizes in every market state
 - idempotency guarantees for `requestId`
 - duplicate-order handling
-- settlement implementation
+- settlement rules, eligibility and payout semantics
+- independent live request/response evidence for `POST /api/settlements/claim`; the route exists
+  in the APK static inventory and Poyto implements the contributed
+  `{"marketId": ..., "positionIndex": ...}` request shape, but this repository has not yet
+  independently established that live request body or a successful response
+- independent live request/response evidence for `POST /api/settlements/claim-split`; APK static
+  callsite/schema analysis establishes `marketId`, `coinRatio`, optional `ticketId`, and a
+  0..100 ratio in steps of 10, but live success and server-side eligibility remain unverified
+- the other APK-static settlement routes such as `ad-ticket` and `loss-bonus`
 - cancellation/undo support
 - limit orders
 - partial fills
@@ -232,7 +241,11 @@ Poyto currently focuses on HTTP APIs. There is no sufficiently backed implementa
 
 ## Device identity and headers
 
-Requests use `x-poyp-*` device/application metadata. Poyto can send configurable equivalents, but does not claim to know which fields are mandatory in every context or how server-side device trust is calculated.
+Requests use `x-poyp-*` device/application metadata. Static analysis of the official app establishes
+that its Device ID is generated once (UUID when available), stored under `poyp_device_id`, and then
+reused. Poyto now implements the same local generate-once/reuse lifecycle and keeps it separate
+from auth-session logout. This does not establish which fields are mandatory in every server
+context or how server-side device trust is calculated.
 
 Unknown:
 

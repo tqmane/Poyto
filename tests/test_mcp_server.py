@@ -1,19 +1,43 @@
 from __future__ import annotations
 
+import argparse
+
 import pytest
 
-from poyto.mcp_server import _require_confirmation, build_parser, build_server
+from poyto.mcp import server as mcp_server
+from poyto.mcp.config import MCPSettings, build_parser, settings_from_args
+from poyto.mcp.server import require_confirmation
 
 
-def test_mcp_parser_defaults_to_stdio() -> None:
+def test_mcp_parser_defaults_to_stdio(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in (
+        "POYTO_MCP_TRANSPORT",
+        "POYTO_MCP_HOST",
+        "POYTO_MCP_PORT",
+        "POYTO_MCP_READ_ONLY",
+    ):
+        monkeypatch.delenv(name, raising=False)
     args = build_parser().parse_args([])
     assert args.transport == "stdio"
     assert args.host == "127.0.0.1"
     assert args.port == 8765
     assert args.read_only is False
+    assert args.print_config is False
 
 
-def test_mcp_parser_accepts_streamable_http_and_read_only() -> None:
+def test_mcp_settings_read_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("POYTO_MCP_TRANSPORT", "streamable-http")
+    monkeypatch.setenv("POYTO_MCP_HOST", "127.0.0.1")
+    monkeypatch.setenv("POYTO_MCP_PORT", "9000")
+    monkeypatch.setenv("POYTO_MCP_READ_ONLY", "true")
+    settings = MCPSettings.from_env()
+    assert settings.transport == "streamable-http"
+    assert settings.host == "127.0.0.1"
+    assert settings.port == 9000
+    assert settings.read_only is True
+
+
+def test_mcp_parser_accepts_streamable_http() -> None:
     args = build_parser().parse_args(
         [
             "--transport",
@@ -31,37 +55,56 @@ def test_mcp_parser_accepts_streamable_http_and_read_only() -> None:
     assert args.read_only is True
 
 
-def test_mcp_parser_reads_read_only_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("POYTO_MCP_READ_ONLY", "true")
-    assert build_parser().parse_args([]).read_only is True
+def test_settings_public_dict_contains_no_credentials() -> None:
+    settings = MCPSettings(transport="stdio", host="127.0.0.1", port=8765, read_only=True)
+    assert settings.as_public_dict() == {
+        "transport": "stdio",
+        "host": "127.0.0.1",
+        "port": 8765,
+        "read_only": True,
+    }
+
+
+def test_settings_reject_invalid_port() -> None:
+    args = argparse.Namespace(
+        transport="streamable-http",
+        host="127.0.0.1",
+        port=70000,
+        read_only=True,
+    )
+    with pytest.raises(ValueError, match="between 1 and 65535"):
+        settings_from_args(args)
 
 
 def test_mutation_requires_explicit_confirmation() -> None:
     with pytest.raises(ValueError, match="confirm=true"):
-        _require_confirmation(False, "buy")
+        require_confirmation(False, "buy")
 
 
 def test_mutation_accepts_confirmation() -> None:
-    _require_confirmation(True, "sell")
+    require_confirmation(True, "sell")
 
 
-@pytest.mark.anyio
-async def test_read_only_server_exposes_only_read_tools() -> None:
-    server = build_server(read_only=True)
-    tools = await server.list_tools()
-    names = {tool.name for tool in tools}
-    assert {"health", "profile", "balances", "portfolio", "markets", "market"} <= names
-    assert {"buy", "sell", "loss_gacha_ticket", "loss_gacha_claim"}.isdisjoint(names)
-    assert all(tool.annotations and tool.annotations.readOnlyHint for tool in tools)
+def test_health_call_disables_auto_refresh(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: dict[str, object] = {}
 
+    class FakeClient:
+        def __init__(self, *, auto_refresh: bool) -> None:
+            seen["auto_refresh"] = auto_refresh
 
-@pytest.mark.anyio
-async def test_full_server_marks_mutations_as_writes() -> None:
-    server = build_server(read_only=False)
-    tools = {tool.name: tool for tool in await server.list_tools()}
-    assert tools["markets"].annotations and tools["markets"].annotations.readOnlyHint is True
-    assert tools["buy"].annotations and tools["buy"].annotations.readOnlyHint is False
-    assert tools["buy"].annotations.destructiveHint is True
+        def __enter__(self) -> FakeClient:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def health(self) -> dict[str, bool]:
+            return {"ok": True}
+
+    monkeypatch.setattr(mcp_server, "PoytoClient", FakeClient)
+
+    assert mcp_server._health_call() == {"ok": True}
+    assert seen["auto_refresh"] is False
 
 
 def test_mcp_refresh_reloads_saved_pair_over_stale_environment(tmp_path, monkeypatch):
@@ -70,7 +113,8 @@ def test_mcp_refresh_reloads_saved_pair_over_stale_environment(tmp_path, monkeyp
 
     import httpx
 
-    from poyto import AuthSession, PoytoClient, SessionStore, mcp_server
+    from poyto import AuthSession, PoytoClient, SessionStore
+    from poyto.mcp import server as mcp_server
 
     path = tmp_path / "session.json"
     store = SessionStore(path)
@@ -105,7 +149,8 @@ def test_mcp_environment_bootstrap_then_401_rotation(tmp_path, monkeypatch):
 
     import httpx
 
-    from poyto import PoytoClient, SessionStore, mcp_server
+    from poyto import PoytoClient, SessionStore
+    from poyto.mcp import server as mcp_server
 
     path = tmp_path / "session.json"
     monkeypatch.setenv("POYTO_SESSION_FILE", str(path))
@@ -143,7 +188,8 @@ def test_mcp_parallel_calls_do_not_reuse_refresh_token(tmp_path, monkeypatch):
 
     import httpx
 
-    from poyto import AuthSession, PoytoClient, SessionStore, mcp_server
+    from poyto import AuthSession, PoytoClient, SessionStore
+    from poyto.mcp import server as mcp_server
 
     path = tmp_path / "session.json"
     SessionStore(path).save(AuthSession(access_token="old", refresh_token="old-refresh", expires_at=1))
@@ -188,7 +234,8 @@ def test_mcp_parallel_calls_do_not_reuse_refresh_token(tmp_path, monkeypatch):
 def test_mcp_can_explicitly_disable_saved_session_loading(tmp_path, monkeypatch):
     import httpx
 
-    from poyto import AuthSession, PoytoClient, SessionStore, mcp_server
+    from poyto import AuthSession, PoytoClient, SessionStore
+    from poyto.mcp import server as mcp_server
 
     path = tmp_path / "session.json"
     SessionStore(path).save(AuthSession(access_token="saved", refresh_token="saved-refresh"))
@@ -205,3 +252,45 @@ def test_mcp_can_explicitly_disable_saved_session_loading(tmp_path, monkeypatch)
     ))
     assert mcp_server._client_call("balances") == {"ok": True}
     assert SessionStore(path).load().access_token == "saved"
+
+
+@pytest.mark.anyio
+async def test_merged_mcp_surface_and_legacy_builder() -> None:
+    from poyto.mcp_server import build_server
+
+    server = build_server(read_only=True)
+    tools = {tool.name: tool for tool in await server.list_tools()}
+    assert {
+        'mcp_info', 'account_snapshot', 'market_context', 'home_sections',
+        'home_tabs', 'interest_subcategories', 'campaign_banners',
+    } <= tools.keys()
+    assert {'settlement_claim', 'buy', 'sell', 'loss_gacha_claim'}.isdisjoint(tools)
+    assert all(tool.annotations and tool.annotations.readOnlyHint for tool in tools.values())
+    full = {tool.name: tool for tool in await build_server().list_tools()}
+    assert full['buy'].annotations.destructiveHint is True
+    assert 'coin_ratio' in full['settlement_claim'].inputSchema['properties']
+
+
+@pytest.mark.parametrize('overview', ['_account_snapshot', '_market_context'])
+def test_overview_uses_latest_saved_pair(tmp_path, monkeypatch, overview):
+    import httpx
+
+    from poyto import AuthSession, PoytoClient, SessionStore
+
+    path = tmp_path / 'session.json'
+    SessionStore(path).save(AuthSession(access_token='saved', refresh_token='saved-refresh'))
+    monkeypatch.setenv('POYTO_SESSION_FILE', str(path))
+    monkeypatch.setenv('POYTO_ACCESS_TOKEN', 'stale-environment')
+    seen = []
+
+    def handler(request):
+        assert request.headers['authorization'] == 'Bearer saved'
+        seen.append(request.url.path)
+        return httpx.Response(200, json={})
+
+    monkeypatch.setattr(mcp_server, 'PoytoClient', lambda **kw: PoytoClient(
+        **kw, transport=httpx.MockTransport(handler),
+    ))
+    args = ('market-id',) if overview == '_market_context' else ()
+    getattr(mcp_server, overview)(*args)
+    assert len(seen) == (2 if args else 5)

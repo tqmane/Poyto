@@ -7,7 +7,7 @@ from typing import Any
 
 from .client import PoytoClient as BasePoytoClient
 from .config import Settings
-from .exceptions import APIError
+from .exceptions import APIError, AuthenticationError
 from .har_loader import load_har_session
 from .models import AuthSession
 from .session_store import SessionStore
@@ -25,6 +25,7 @@ class PoytoClient(BasePoytoClient):
         access_token: str | None = None,
         refresh_token: str | None = None,
         session_file: str | Path | None = None,
+        device_file: str | Path | None = None,
         auto_load_session: bool | None = None,
         auto_refresh: bool | None = None,
         save_session: bool | None = None,
@@ -71,6 +72,7 @@ class PoytoClient(BasePoytoClient):
         super().__init__(
             access_token=effective_access,
             refresh_token=effective_refresh,
+            device_file=device_file or settings.device_file,
             **kwargs,
         )
         self._copy_session_metadata(metadata_source)
@@ -136,10 +138,48 @@ class PoytoClient(BasePoytoClient):
         return session
 
     def refresh(self, refresh_token: str | None = None) -> AuthSession:
-        session = super().refresh(refresh_token)
-        if self.save_session:
+        if refresh_token is not None or not self.save_session:
+            session = super().refresh(refresh_token)
+            if self.save_session:
+                self.session_store.save(session)
+            return session
+
+        with self.session_store.refresh_lock():
+            stored = self.session_store.load()
+            current_refresh = self.session.refresh_token if self.session else None
+            if (
+                stored is not None
+                and stored.refresh_token is not None
+                and current_refresh is not None
+                and stored.refresh_token != current_refresh
+            ):
+                self.session = stored
+                return stored
+
+            try:
+                session = super().refresh()
+            except APIError as exc:
+                body = exc.response_body if isinstance(exc.response_body, dict) else {}
+                if body.get("error_code") in {
+                    "refresh_token_already_used",
+                    "refresh_token_not_found",
+                }:
+                    newer = self.session_store.load()
+                    if (
+                        newer is not None
+                        and newer.refresh_token is not None
+                        and newer.refresh_token != current_refresh
+                    ):
+                        self.session = newer
+                        return newer
+                    raise AuthenticationError(
+                        "saved POYP session can no longer be refreshed; import a fresh "
+                        "authorized session"
+                    ) from exc
+                raise
+
             self.session_store.save(session)
-        return session
+            return session
 
     def request(
         self,
