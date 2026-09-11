@@ -4,6 +4,8 @@ All notable Poyto changes are recorded here.
 
 ## Unreleased
 
+- Selectively imported upstream selectable settlement payouts and combined MCP account/market reads; retained the fork session lifecycle and deployment architecture.
+
 - Added multi-architecture Docker publication for native `linux/amd64` and `linux/arm64` GitHub runners.
 - Added standalone Poyto Server Control for ChatGPT/custom MCP clients, combining Poyto tools with Codex/Chat On Steroids Core-inspired `read`, `apply_patch`, `exec_command`, and `write_stdin` primitives without a Chat On Steroids runtime dependency.
 - Added independent Bearer authentication for the control plugin and persistent token storage.

@@ -74,6 +74,11 @@ python scripts/code_stats.py
 
 It reports physical and non-blank lines for `src/poyto/**/*.py`, separates core modules from `resources/`, reports tests, and prints each source file. CI runs the same measurement on Python 3.14.
 
+## Additional upstream features
+
+- Select the point/coin payout ratio with `poyto settlement-claim MARKET_ID --coin-ratio 60 --yes`, or the `coin_ratio` argument of the existing MCP `settlement_claim` tool. The ratio is in 10% steps; optional tickets use `--ticket-id` / `ticket_id`. See [settlement API and evidence](docs/python-api.md#settlement-claim).
+- Use MCP `account_snapshot` for a combined account overview and `market_context` for market detail plus activity.
+
 ## What changed in 0.2
 
 - Pythonic, responsibility-based package layout

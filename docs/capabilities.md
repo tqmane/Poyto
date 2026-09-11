@@ -19,10 +19,10 @@ Measured by CI with `python scripts/code_stats.py`:
 
 | Area | Files | Physical lines | Non-blank lines |
 | --- | ---: | ---: | ---: |
-| Core `src/poyto/*.py` | 20 | 2,912 | 2,525 |
-| Resource wrappers `src/poyto/resources/*.py` | 7 | 485 | 400 |
-| **Source total** | **27** | **3,397** | **2,925** |
-| Tests | 10 | 1,416 | 1,155 |
+| Core `src/poyto/*.py` | 20 | 2,981 | 2,590 |
+| Resource wrappers `src/poyto/resources/*.py` | 7 | 508 | 420 |
+| **Source total** | 27 | 3,489 | 3,010 |
+| Tests | 11 | 1,694 | 1,369 |
 
 Per-source-file snapshot:
 
@@ -30,14 +30,14 @@ Per-source-file snapshot:
 | --- | ---: | ---: | --- |
 | `src/poyto/control_exec.py` | 380 | 345 | Codex-style Linux command sessions and stdin continuation |
 | `src/poyto/control_fs.py` | 306 | 272 | bounded root-scoped file reads and patch application |
-| `src/poyto/mcp_server.py` | 310 | 270 | Poyto MCP tool surface and composable server builder |
+| `src/poyto/mcp_server.py` | 357 | 314 | Poyto MCP tool surface and composable server builder |
 | `src/poyto/control_plugin.py` | 274 | 241 | authenticated Poyto Server Control plugin surface |
 | `src/poyto/_http.py` | 215 | 191 | HTTP transport, headers, auth exchange/refresh/logout |
 | `src/poyto/auto.py` | 198 | 179 | credential loading, persistence, auto-refresh, 401 retry |
-| `src/poyto/cli_dispatch.py` | 187 | 174 | CLI command execution |
+| `src/poyto/cli_dispatch.py` | 202 | 189 | CLI command execution |
 | `src/poyto/token_loader.py` | 163 | 136 | token/text/file parsing |
-| `src/poyto/resources/account.py` | 147 | 117 | account, balances, notifications, referral, reward/status reads |
-| `src/poyto/cli_parser.py` | 130 | 103 | CLI arguments and command definitions |
+| `src/poyto/resources/account.py` | 170 | 137 | account, balances, notifications, referral, reward/status reads |
+| `src/poyto/cli_parser.py` | 137 | 109 | CLI arguments and command definitions |
 | `src/poyto/control_paths.py` | 127 | 108 | approved-root and host-path resolution for server control |
 | `src/poyto/resources/social.py` | 129 | 107 | users, follows, comments/social reads/writes |
 | `src/poyto/har_loader.py` | 111 | 92 | secret-safe HAR/HAR.zip session extraction |
@@ -194,3 +194,8 @@ For everything that lacks enough evidence, see [`known-gaps.md`](known-gaps.md).
 `compose.portainer.yaml` packages Poyto and the official tunnel-client for Portainer Docker Standalone, sharing a private network namespace with no published ports. Published image manifests include amd64 and arm64. Separate `compose.portainer.amd64.yaml` and `compose.portainer.arm64.yaml` files select the target CPU explicitly. See [Portainer setup](setup-portainer.md).
 
 Portainer setup follow-up: the user reported successful operation after correcting the data-directory/session ownership to UID/GID 10001. This is user-reported deployment evidence, not a maintainer-run hardware, load or reboot test. The [Japanese Portainer guide](setup-portainer.md) records the error and repair commands.
+
+## Selectively imported upstream features
+
+- `claim_settlement_split(market_id, coin_ratio, ticket_id=None)` adds selectable point/coin payouts to Python, CLI and the existing `settlement_claim` MCP tool. The route and schema are backed by upstream APK static analysis (nezumi0627/Poyto commit `9e370ba`); independent live success is not established. See [Python API](python-api.md#settlement-claim).
+- `account_snapshot` combines profile, balances, portfolio, login bonus and unread notification count in one MCP result. `market_context` combines market detail and recent activity. Both are read-only local aggregations of existing methods; they reuse this fork's current MCP session loading and refresh policy.

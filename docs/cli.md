@@ -59,7 +59,16 @@ poyto follow USER_ID --yes
 poyto unfollow USER_ID --yes
 poyto set-referral CODE --yes
 poyto claim-ad-reward --yes
+poyto settlement-claim MARKET_ID POSITION_INDEX --yes
+poyto settlement-claim MARKET_ID --coin-ratio 60 --yes
+poyto settlement-claim MARKET_ID --coin-ratio 60 --ticket-id TICKET_ID --yes
 ```
+
+Without `--coin-ratio`, `settlement-claim` uses the existing implemented/inferred settlement
+request shape and requires `POSITION_INDEX`. With `--coin-ratio`, it uses the
+APK-static-established split request and does not require `POSITION_INDEX`. Ratios are selected in
+10% steps from `0` (all points) through `100` (all coins). `--ticket-id` is optional and is accepted
+only together with `--coin-ratio`. Independent live-success evidence is still missing.
 
 ## Raw request escape hatch
 
