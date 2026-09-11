@@ -101,6 +101,28 @@ def build_server(
         return _client_call("health")
 
     @mcp.tool(annotations=read_annotations)
+    def account_snapshot() -> dict[str, Any]:
+        """Get profile, balances, portfolio, login bonus and unread count together."""
+        return {
+            "profile": _client_call("profile"),
+            "balances": _client_call("balances"),
+            "portfolio": _client_call("portfolio"),
+            "login_bonus": _client_call("login_bonus"),
+            "unread_notification_count": _client_call("unread_notification_count"),
+        }
+
+    @mcp.tool(annotations=read_annotations)
+    def market_context(market_id: str, activity_limit: int = 20) -> dict[str, Any]:
+        """Get one market plus recent activity together for faster analysis."""
+        return {
+            "market": _client_call("market", market_id),
+            "activity": _client_call(
+                "market_activity", market_id,
+                limit=max(1, min(activity_limit, 100)), types="all",
+            ),
+        }
+
+    @mcp.tool(annotations=read_annotations)
     def profile() -> Any:
         """Get the authenticated account profile."""
         return _client_call("profile")
@@ -238,13 +260,26 @@ def build_server(
         @mcp.tool(annotations=mutation_annotations)
         def settlement_claim(
             market_id: str,
-            position_index: int,
+            position_index: int | None = None,
+            coin_ratio: int | None = None,
+            ticket_id: str | None = None,
             confirm: bool = False,
         ) -> Any:
-            """Claim an eligible settled market payout. Requires explicit confirm=true."""
+            """Claim a settled payout, optionally selecting its point/coin split."""
             _require_confirmation(confirm, "settlement_claim")
-            if position_index < 0:
+            if position_index is not None and position_index < 0:
                 raise ValueError("position_index must be zero or greater")
+            if ticket_id is not None and coin_ratio is None:
+                raise ValueError("ticket_id requires coin_ratio")
+            if coin_ratio is not None:
+                return _client_call(
+                    "claim_settlement_split",
+                    market_id,
+                    coin_ratio,
+                    ticket_id=ticket_id,
+                )
+            if position_index is None:
+                raise ValueError("position_index is required without coin_ratio")
             return _client_call("claim_settlement", market_id, position_index)
 
         @mcp.tool(annotations=mutation_annotations)

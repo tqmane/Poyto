@@ -205,3 +205,59 @@ def test_mcp_can_explicitly_disable_saved_session_loading(tmp_path, monkeypatch)
     ))
     assert mcp_server._client_call("balances") == {"ok": True}
     assert SessionStore(path).load().access_token == "saved"
+
+
+@pytest.mark.anyio
+async def test_upstream_overviews_use_existing_session_calls(monkeypatch):
+    from poyto import mcp_server
+
+    calls = []
+
+    def call(method, *args, **kwargs):
+        calls.append((method, args, kwargs))
+        return {"source": method}
+
+    monkeypatch.setattr(mcp_server, "_client_call", call)
+    server = build_server(read_only=True)
+    tools = {tool.name: tool for tool in await server.list_tools()}
+    for name in ("account_snapshot", "market_context"):
+        assert tools[name].annotations.readOnlyHint is True
+    await server.call_tool("account_snapshot", {})
+    assert [entry[0] for entry in calls] == [
+        "profile", "balances", "portfolio", "login_bonus", "unread_notification_count",
+    ]
+    calls.clear()
+    await server.call_tool("market_context", {"market_id": "market-id", "activity_limit": 999})
+    assert calls == [
+        ("market", ("market-id",), {}),
+        ("market_activity", ("market-id",), {"limit": 100, "types": "all"}),
+    ]
+
+
+@pytest.mark.anyio
+async def test_split_claim_keeps_confirmation_and_legacy_dispatch(monkeypatch):
+    from poyto import mcp_server
+
+    calls = []
+
+    def call(method, *args, **kwargs):
+        calls.append((method, args, kwargs))
+        return {"ok": True}
+
+    monkeypatch.setattr(mcp_server, "_client_call", call)
+    server = build_server()
+    from mcp.server.fastmcp.exceptions import ToolError
+
+    with pytest.raises(ToolError, match="confirm=true"):
+        await server.call_tool("settlement_claim", {"market_id": "market-id", "coin_ratio": 60})
+    assert calls == []
+    await server.call_tool("settlement_claim", {
+        "market_id": "market-id", "coin_ratio": 60, "ticket_id": "ticket-id", "confirm": True,
+    })
+    await server.call_tool("settlement_claim", {
+        "market_id": "market-id", "position_index": 3, "confirm": True,
+    })
+    assert calls == [
+        ("claim_settlement_split", ("market-id", 60), {"ticket_id": "ticket-id"}),
+        ("claim_settlement", ("market-id", 3), {}),
+    ]

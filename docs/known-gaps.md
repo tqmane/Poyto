@@ -87,7 +87,7 @@ Unknown or unverified:
 - minimum and maximum order sizes in every market state
 - idempotency guarantees for `requestId`
 - duplicate-order handling
-- settlement implementation
+- complete settlement rules and error/eligibility behavior
 - cancellation/undo support
 - limit orders
 - partial fills
@@ -293,3 +293,7 @@ Before moving an item from unknown to supported:
 The Portainer stack configuration and published amd64/arm64 image manifests have been checked. Load and reboot recovery remain unverified on deployment hardware. These files target Linux Docker Standalone; Swarm and ARMv7/32-bit deployments are not covered. See [Portainer setup](setup-portainer.md).
 
 Portainer setup follow-up: the user reported successful operation after correcting the data-directory/session ownership to UID/GID 10001. This is user-reported deployment evidence, not a maintainer-run hardware, load or reboot test. The [Japanese Portainer guide](setup-portainer.md) records the error and repair commands.
+
+## Selectable settlement payouts
+
+`POST /api/settlements/claim-split` is implemented from upstream APK static schema evidence (`marketId`, `coinRatio`, optional `ticketId`). Ratio choices are 0–100 in steps of 10. Independent live-success evidence, reward eligibility, ticket requirements and complete errors remain unverified. This addition does not establish the full settlement engine.
