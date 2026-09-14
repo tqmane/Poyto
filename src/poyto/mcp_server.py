@@ -240,6 +240,15 @@ def build_server(
             openWorldHint=True,
         )
 
+        @mcp.tool(annotations=mutation_annotations)
+        def claim_ad_reward(confirm: bool = False) -> Any:
+            """Claim one watch_ad reward after the normal ad flow. Requires explicit confirm=true.
+
+            Does not watch ads or establish eligibility; the server decides rewards and limits.
+            """
+            _require_confirmation(confirm, "claim_ad_reward")
+            return _client_call("claim_ad_reward")
+
         @mcp.tool(annotations=ticket_annotations)
         def loss_gacha_ticket(market_id: str, confirm: bool = False) -> Any:
             """Create a short-lived loss-gacha ticket. Requires explicit confirm=true."""

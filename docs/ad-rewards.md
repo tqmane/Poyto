@@ -25,6 +25,13 @@ poyto claim-ad-reward --yes
 
 `--yes` is intentionally required because this call changes account reward state.
 
+Both Poyto MCP and Poyto Server Control expose `claim_ad_reward` with arguments
+`{"confirm": true}`. After the user authorizes a claim following the normal ad flow,
+the tool calls the existing client method once with `source=watch_ad` and returns
+the server response. It reuses MCP session loading and refresh handling, requires
+explicit confirmation, and is omitted from the read-only MCP server. Restart the
+updated server and refresh the connected client's tool list to discover it.
+
 ## Successful response
 
 A successful response uses HTTP 200 and includes these fields:

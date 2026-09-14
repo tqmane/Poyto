@@ -19,10 +19,10 @@ Measured by CI with `python scripts/code_stats.py`:
 
 | Area | Files | Physical lines | Non-blank lines |
 | --- | ---: | ---: | ---: |
-| Core `src/poyto/*.py` | 20 | 2,981 | 2,590 |
+| Core `src/poyto/*.py` | 20 | 2,990 | 2,597 |
 | Resource wrappers `src/poyto/resources/*.py` | 7 | 508 | 420 |
-| **Source total** | 27 | 3,489 | 3,010 |
-| Tests | 11 | 1,694 | 1,369 |
+| **Source total** | 27 | 3,498 | 3,017 |
+| Tests | 11 | 1,736 | 1,404 |
 
 Per-source-file snapshot:
 
@@ -30,7 +30,7 @@ Per-source-file snapshot:
 | --- | ---: | ---: | --- |
 | `src/poyto/control_exec.py` | 380 | 345 | Codex-style Linux command sessions and stdin continuation |
 | `src/poyto/control_fs.py` | 306 | 272 | bounded root-scoped file reads and patch application |
-| `src/poyto/mcp_server.py` | 357 | 314 | Poyto MCP tool surface and composable server builder |
+| `src/poyto/mcp_server.py` | 366 | 321 | Poyto MCP tool surface and composable server builder |
 | `src/poyto/control_plugin.py` | 274 | 241 | authenticated Poyto Server Control plugin surface |
 | `src/poyto/_http.py` | 215 | 191 | HTTP transport, headers, auth exchange/refresh/logout |
 | `src/poyto/auto.py` | 198 | 179 | credential loading, persistence, auto-refresh, 401 retry |
@@ -102,6 +102,10 @@ Primary implementation footprint: `resources/account.py` (106 lines), plus trans
 ## Ad rewards
 
 `claim_ad_reward(source="watch_ad")` is a first-class operation.
+
+Poyto MCP and Poyto Server Control also expose `claim_ad_reward(confirm=true)`.
+This adapter makes one existing client call using `watch_ad`; confirmation,
+read-only exclusion and request/response forwarding are tested offline.
 
 Established request:
 
