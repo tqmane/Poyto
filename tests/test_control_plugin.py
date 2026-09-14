@@ -147,7 +147,7 @@ async def test_control_plugin_exposes_poyto_and_core_tools(
     _paths(monkeypatch, tmp_path)
     server = build_control_plugin(authenticated=False)
     tools = {tool.name: tool for tool in await server.list_tools()}
-    assert {"markets", "buy", "sell", "read", "apply_patch", "exec_command", "write_stdin"} <= tools.keys()
+    assert {"markets", "buy", "sell", "claim_ad_reward", "read", "apply_patch", "exec_command", "write_stdin"} <= tools.keys()
     assert tools["read"].annotations and tools["read"].annotations.readOnlyHint is True
     assert tools["exec_command"].annotations and tools["exec_command"].annotations.readOnlyHint is False
     assert tools["buy"].annotations and tools["buy"].annotations.readOnlyHint is False

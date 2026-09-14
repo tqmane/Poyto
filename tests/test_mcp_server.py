@@ -51,7 +51,7 @@ async def test_read_only_server_exposes_only_read_tools() -> None:
     tools = await server.list_tools()
     names = {tool.name for tool in tools}
     assert {"health", "profile", "balances", "portfolio", "markets", "market"} <= names
-    assert {"buy", "sell", "loss_gacha_ticket", "loss_gacha_claim"}.isdisjoint(names)
+    assert {"buy", "sell", "loss_gacha_ticket", "loss_gacha_claim", "claim_ad_reward"}.isdisjoint(names)
     assert all(tool.annotations and tool.annotations.readOnlyHint for tool in tools)
 
 
@@ -261,3 +261,45 @@ async def test_split_claim_keeps_confirmation_and_legacy_dispatch(monkeypatch):
         ("claim_settlement_split", ("market-id", 60), {"ticket_id": "ticket-id"}),
         ("claim_settlement", ("market-id", 3), {}),
     ]
+
+
+@pytest.mark.anyio
+async def test_ad_reward_claim_confirmation_and_request(monkeypatch):
+    import json
+
+    import httpx
+    from mcp.server.fastmcp.exceptions import ToolError
+
+    from poyto import PoytoClient, mcp_server
+
+    calls = []
+    response = {
+        "earnId": "earn-id", "rewardPoints": 7, "pointBalanceAfter": 19,
+        "dailyViewCount": 3, "dailyViewLimit": 8,
+    }
+
+    def handler(request):
+        calls.append(request)
+        assert request.method == "POST"
+        assert request.url.path == "/api/me/ad-rewards/claim"
+        assert request.url.query == b"source=watch_ad"
+        assert request.content == b""
+        return httpx.Response(200, json=response)
+
+    monkeypatch.setattr(mcp_server, "PoytoClient", lambda **kw: PoytoClient(
+        token="token", auto_load_session=False, save_session=False,
+        transport=httpx.MockTransport(handler),
+    ))
+    server = build_server()
+    tools = {tool.name: tool for tool in await server.list_tools()}
+    tool = tools["claim_ad_reward"]
+    assert tool.annotations.readOnlyHint is False
+    assert tool.annotations.idempotentHint is False
+    assert tool.inputSchema["properties"]["confirm"]["default"] is False
+    for arguments in ({}, {"confirm": False}):
+        with pytest.raises(ToolError, match="confirm=true"):
+            await server.call_tool("claim_ad_reward", arguments)
+    assert calls == []
+    result = await server.call_tool("claim_ad_reward", {"confirm": True})
+    assert json.loads(result[0].text) == response
+    assert len(calls) == 1
