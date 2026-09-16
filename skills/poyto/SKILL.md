@@ -80,7 +80,7 @@ When the user asks for something like "締切間近を10件比較して良さそ
 
 ## Mutating operations
 
-`buy` and `sell` change account state. MCP mutations require `confirm=true`; CLI mutations require `--yes`.
+`buy`, `sell`, daily claims (`claim_login_bonus`, `claim_daily_trade`, `claim_mission`), and other writes change account state. MCP mutations require `confirm=true`; CLI mutations require `--yes`.
 
 Before executing, verify:
 

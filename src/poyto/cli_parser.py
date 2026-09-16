@@ -105,6 +105,16 @@ def build_parser() -> argparse.ArgumentParser:
     ad.add_argument("--source", default="watch_ad")
     ad.add_argument("--yes", action="store_true")
 
+    login_claim = sub.add_parser("claim-login-bonus")
+    login_claim.add_argument("--yes", action="store_true")
+
+    daily_trade = sub.add_parser("claim-daily-trade")
+    daily_trade.add_argument("--yes", action="store_true")
+
+    mission_claim = sub.add_parser("claim-mission")
+    mission_claim.add_argument("slug")
+    mission_claim.add_argument("--yes", action="store_true")
+
     settlement_claim = sub.add_parser("settlement-claim")
     settlement_claim.add_argument("market_id")
     settlement_claim.add_argument("position_index", type=int, nargs="?")

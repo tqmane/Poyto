@@ -59,6 +59,9 @@ poyto follow USER_ID --yes
 poyto unfollow USER_ID --yes
 poyto set-referral CODE --yes
 poyto claim-ad-reward --yes
+poyto claim-login-bonus --yes
+poyto claim-daily-trade --yes
+poyto claim-mission daily_trade --yes
 poyto settlement-claim MARKET_ID POSITION_INDEX --yes
 poyto settlement-claim MARKET_ID --coin-ratio 60 --yes
 poyto settlement-claim MARKET_ID --coin-ratio 60 --ticket-id TICKET_ID --yes

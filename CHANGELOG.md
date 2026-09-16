@@ -4,6 +4,7 @@ All notable Poyto changes are recorded here.
 
 ## Unreleased
 
+- Added dedicated daily login and mission claim tools: Python claim_login_streak / claim_login_bonus / claim_mission / claim_daily_trade, CLI claim-login-bonus / claim-daily-trade / claim-mission, and MCP claim_login_bonus / claim_daily_trade / claim_mission with confirm=true. Live success verified 2026-09-16 for login-streak/claim and missions/daily_trade/claim with no JSON body.
 - Selectively imported upstream selectable settlement payouts and combined MCP account/market reads; retained the fork session lifecycle and deployment architecture.
 
 - Added multi-architecture Docker publication for native `linux/amd64` and `linux/arm64` GitHub runners.

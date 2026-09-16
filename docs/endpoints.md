@@ -37,9 +37,13 @@ See [refresh tokens](refresh-tokens.md) for the distinction.
 - `POST /api/me/notifications/read-all`
 - `POST /api/me/push-tokens`
 - `POST /api/me/ad-rewards/claim`
+- `POST /api/me/login-streak/claim`
+- `POST /api/me/missions/{slug}/claim`
 - `GET /api/me/blocked-users`
 
 The ad-reward request has a known HTTP 200 success shape for `source=watch_ad`; see [ad rewards](ad-rewards.md).
+
+The login-streak claim and the daily_trade mission claim are established as POST with no JSON body. Live success was verified on 2026-09-16 via the authenticated client for login-streak/claim and missions/daily_trade/claim; other mission slugs share the APK-static route pattern and remain server-defined for eligibility and responses.
 
 ## Referral
 

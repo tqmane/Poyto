@@ -41,6 +41,8 @@ Token files may be plaintext, JSON, or dotenv-style. See [configuration](configu
 - `balance_history()` / `balance_transactions()`
 - `expiring_balances()`
 - `missions()` / `login_streak()`
+- `claim_login_streak()` / `claim_login_bonus()` (alias)
+- `claim_mission(slug)` / `claim_daily_trade()`
 - `campaign_results()`
 - `provider_rewards()` / `loss_gacha_status()`
 - `notifications()` / `unread_notification_count()`
@@ -48,6 +50,12 @@ Token files may be plaintext, JSON, or dotenv-style. See [configuration](configu
 - `claim_ad_reward()`
 - `blocked_users()` / `walking_challenge_status()`
 - `referral_code()` / `referral_stats()` / `referral_code_available()` / `set_referral_code()`
+
+## Daily login and mission claims
+
+- `claim_login_streak()` / `claim_login_bonus()` posts to login-streak/claim with no JSON body.
+- `claim_mission(slug)` posts to missions slug claim with no JSON body; `claim_daily_trade()` uses slug daily_trade.
+- Live success is established for login-streak/claim and daily_trade on 2026-09-16; other slugs share the APK-static pattern and remain server-defined.
 
 ## Markets
 

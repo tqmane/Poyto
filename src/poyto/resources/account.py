@@ -128,6 +128,24 @@ class AccountMixin(ResourceMixin):
             self.post("/api/me/ad-rewards/claim", params={"source": source}),
         )
 
+    def claim_login_streak(self) -> Any:
+        """Claim the daily login-streak reward with no JSON body."""
+        return self.post("/api/me/login-streak/claim")
+
+    def claim_login_bonus(self) -> Any:
+        """Alias for claim_login_streak matching login-bonus wording."""
+        return self.claim_login_streak()
+
+    def claim_mission(self, slug: str) -> Any:
+        """Claim one mission reward by slug with no JSON body."""
+        if not slug or "/" in slug or "?" in slug or "#" in slug:
+            raise ValueError("slug must be a non-empty mission identifier")
+        return self.post(f"/api/me/missions/{slug}/claim")
+
+    def claim_daily_trade(self) -> Any:
+        """Claim the daily-trade mission reward (slug daily_trade)."""
+        return self.claim_mission("daily_trade")
+
     def claim_settlement(self, market_id: str, position_index: int) -> Any:
         """Request the payout claim for a settled market position."""
         return self.post(

@@ -19,10 +19,10 @@ Measured by CI with `python scripts/code_stats.py`:
 
 | Area | Files | Physical lines | Non-blank lines |
 | --- | ---: | ---: | ---: |
-| Core `src/poyto/*.py` | 20 | 2,990 | 2,597 |
-| Resource wrappers `src/poyto/resources/*.py` | 7 | 508 | 420 |
-| **Source total** | 27 | 3,498 | 3,017 |
-| Tests | 11 | 1,736 | 1,404 |
+| Core `src/poyto/*.py` | 20 | 3,027 | 2,628 |
+| Resource wrappers `src/poyto/resources/*.py` | 7 | 526 | 434 |
+| **Source total** | 27 | 3,553 | 3,062 |
+| Tests | 12 | 1,918 | 1,543 |
 
 Per-source-file snapshot:
 
@@ -30,14 +30,14 @@ Per-source-file snapshot:
 | --- | ---: | ---: | --- |
 | `src/poyto/control_exec.py` | 380 | 345 | Codex-style Linux command sessions and stdin continuation |
 | `src/poyto/control_fs.py` | 306 | 272 | bounded root-scoped file reads and patch application |
-| `src/poyto/mcp_server.py` | 366 | 321 | Poyto MCP tool surface and composable server builder |
+| `src/poyto/mcp_server.py` | 384 | 336 | Poyto MCP tool surface and composable server builder |
 | `src/poyto/control_plugin.py` | 274 | 241 | authenticated Poyto Server Control plugin surface |
 | `src/poyto/_http.py` | 215 | 191 | HTTP transport, headers, auth exchange/refresh/logout |
 | `src/poyto/auto.py` | 198 | 179 | credential loading, persistence, auto-refresh, 401 retry |
-| `src/poyto/cli_dispatch.py` | 202 | 189 | CLI command execution |
+| `src/poyto/cli_dispatch.py` | 211 | 198 | CLI command execution |
 | `src/poyto/token_loader.py` | 163 | 136 | token/text/file parsing |
-| `src/poyto/resources/account.py` | 170 | 137 | account, balances, notifications, referral, reward/status reads |
-| `src/poyto/cli_parser.py` | 137 | 109 | CLI arguments and command definitions |
+| `src/poyto/resources/account.py` | 188 | 151 | account, balances, notifications, referral, reward/status reads |
+| `src/poyto/cli_parser.py` | 147 | 116 | CLI arguments and command definitions |
 | `src/poyto/control_paths.py` | 127 | 108 | approved-root and host-path resolution for server control |
 | `src/poyto/resources/social.py` | 129 | 107 | users, follows, comments/social reads/writes |
 | `src/poyto/har_loader.py` | 111 | 92 | secret-safe HAR/HAR.zip session extraction |
@@ -95,9 +95,9 @@ separate processes/shell commands are not synchronized.
 
 ## Account, balances and notifications
 
-Implemented wrappers cover profile, balances, portfolio, portfolio history, balance history, balance transactions, expiring balances, missions, login streak, campaign results, provider rewards, loss-gacha status, notifications, unread count, read-all, push-token registration, blocked users, referral data and walking-challenge status.
+Implemented wrappers cover profile, balances, portfolio, portfolio history, balance history, balance transactions, expiring balances, missions, login streak, daily login/mission claims, campaign results, provider rewards, loss-gacha status, notifications, unread count, read-all, push-token registration, blocked users, referral data and walking-challenge status.
 
-Primary implementation footprint: `resources/account.py` (106 lines), plus transport/session infrastructure.
+Primary implementation footprint: `resources/account.py` (188 lines), plus transport/session infrastructure.
 
 ## Ad rewards
 
@@ -122,6 +122,12 @@ No JSON body is required by the established request shape. A successful response
 - `dailyViewLimit`
 
 `AdRewardClaimResponse` types those fields. Reward values and daily limits are treated as server-provided values rather than universal constants. Poyto does not fabricate ad-SDK completion callbacks, proof, eligibility state, or anti-abuse state.
+
+## Daily login and mission claims
+
+`claim_login_streak()` / `claim_login_bonus()` posts to login-streak/claim with no JSON body. `claim_mission(slug)` posts to missions slug claim with no JSON body; `claim_daily_trade()` uses slug daily_trade. Responses are intentionally untyped; the server response remains authoritative.
+
+Poyto MCP and Poyto Server Control expose `claim_login_bonus(confirm=true)`, `claim_daily_trade(confirm=true)`, and `claim_mission(slug, confirm=true)`. CLI exposes `claim-login-bonus --yes`, `claim-daily-trade --yes`, and `claim-mission SLUG --yes`. Live success was verified on 2026-09-16 for login-streak/claim and missions/daily_trade/claim; other slugs share the APK-static route pattern and remain server-defined.
 
 ## Markets and pricing
 
@@ -163,9 +169,9 @@ Implemented and observed: read referral code/stats, check code availability, upd
 
 ## CLI
 
-Common commands include authentication (`login`, `login-apple`, `logout`, `refresh`), account reads, markets, market detail, activity, charts, prices, transactions, buy/sell, comments, follow/unfollow, referral operations, notification read-all, ad-reward claim, user inspection and raw requests.
+Common commands include authentication (`login`, `login-apple`, `logout`, `refresh`), account reads, markets, market detail, activity, charts, prices, transactions, buy/sell, comments, follow/unfollow, referral operations, notification read-all, ad-reward claim, daily login/mission claims, user inspection and raw requests.
 
-CLI implementation footprint: `cli_parser.py` 116 lines + `cli_dispatch.py` 174 + `cli.py` 28 = **318 physical lines**.
+CLI implementation footprint: `cli_parser.py` 147 lines + `cli_dispatch.py` 211 + `cli.py` 28 = **386 physical lines**.
 
 State-changing commands require explicit `--yes` where defined.
 

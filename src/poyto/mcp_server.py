@@ -249,6 +249,24 @@ def build_server(
             _require_confirmation(confirm, "claim_ad_reward")
             return _client_call("claim_ad_reward")
 
+        @mcp.tool(annotations=mutation_annotations)
+        def claim_login_bonus(confirm: bool = False) -> Any:
+            """Claim the daily login-streak reward. Requires explicit confirm=true."""
+            _require_confirmation(confirm, "claim_login_bonus")
+            return _client_call("claim_login_bonus")
+
+        @mcp.tool(annotations=mutation_annotations)
+        def claim_daily_trade(confirm: bool = False) -> Any:
+            """Claim the daily-trade mission reward. Requires explicit confirm=true."""
+            _require_confirmation(confirm, "claim_daily_trade")
+            return _client_call("claim_daily_trade")
+
+        @mcp.tool(annotations=mutation_annotations)
+        def claim_mission(slug: str, confirm: bool = False) -> Any:
+            """Claim one mission reward by slug. Requires explicit confirm=true."""
+            _require_confirmation(confirm, "claim_mission")
+            return _client_call("claim_mission", slug)
+
         @mcp.tool(annotations=ticket_annotations)
         def loss_gacha_ticket(market_id: str, confirm: bool = False) -> Any:
             """Create a short-lived loss-gacha ticket. Requires explicit confirm=true."""

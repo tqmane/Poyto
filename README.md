@@ -30,6 +30,7 @@ Poyto currently covers the major supported POYP HTTP surfaces:
 - comments, replies, edit/delete/like, follow/unfollow, user profiles and social history
 - home/discovery, leaderboards, timeline/global-chat reads, and event submission
 - ad-reward claim API, including typed successful response fields
+- daily login-streak and daily-trade mission claims (dedicated client/CLI/MCP tools, no JSON body)
 - Python API plus CLI, with `--yes` confirmation for state-changing CLI commands
 - token files, environment configuration, masked session inspection, typed package metadata, and network-free regression tests
 - optional MCP server and reusable agent skill for conversational AI clients and scheduled automation hosts
@@ -320,7 +321,7 @@ with PoytoClient() as client:
     print(client.asset_price("BTC"))
 ```
 
-State-changing operations include buy/sell, comments, likes, follow/unfollow, referral-code update, notification read-all, and ad-reward claim. The CLI requires `--yes` for state-changing commands.
+State-changing operations include buy/sell, comments, likes, follow/unfollow, referral-code update, notification read-all, ad-reward claim, and daily login/mission claims. The CLI requires `--yes` for state-changing commands.
 
 ```powershell
 poyto buy MARKET_ID 1 10 --yes

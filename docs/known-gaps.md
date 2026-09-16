@@ -147,10 +147,13 @@ Supported referral reads and referral-code update do not establish:
 
 Read/status endpoints exist, but there is insufficient evidence for arbitrary mutation endpoints.
 
+Supported daily claims are `claim_login_bonus` (POST login-streak/claim) and `claim_daily_trade` / `claim_mission(slug)` (POST missions slug claim), verified live on 2026-09-16 for login-streak and daily_trade. Other mission slugs share the APK-static route pattern but their eligibility and responses remain server-defined.
+
 Do not assume methods for:
 
-- completing a mission manually
-- forcing a login streak
+- completing an arbitrary mission without established eligibility evidence
+- forcing a login streak outside the established claim
+- claiming login-streak bonus-claim or mission bonus-claim without live evidence
 - claiming campaign rewards without established request evidence
 - triggering loss gacha
 - changing campaign result state
