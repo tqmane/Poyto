@@ -2,10 +2,12 @@ from .auto import PoytoClient
 from .config import Settings
 from .exceptions import APIError, AuthenticationError, CredentialError, PoytoError
 from .models import (
+    LOSS_GACHA_CLAIM_KINDS,
     AdRewardClaimResponse,
     AuthSession,
     DeviceInfo,
     LoginBonusStatus,
+    LossGachaClaimKind,
     LossGachaClaimResponse,
     LossGachaPublicRange,
     LossGachaStatus,
@@ -17,12 +19,14 @@ from .token_loader import load_token_file, load_token_source, parse_token_text
 
 __all__ = [
     "APIError",
+    "LOSS_GACHA_CLAIM_KINDS",
     "AdRewardClaimResponse",
     "AuthSession",
     "AuthenticationError",
     "CredentialError",
     "DeviceInfo",
     "LoginBonusStatus",
+    "LossGachaClaimKind",
     "LossGachaClaimResponse",
     "LossGachaPublicRange",
     "LossGachaStatus",

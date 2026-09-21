@@ -6,6 +6,7 @@ from .._resource import ResourceMixin
 from ..models import (
     AdRewardClaimResponse,
     LoginBonusStatus,
+    LossGachaClaimKind,
     LossGachaClaimResponse,
     LossGachaStatus,
     LossGachaTicketResponse,
@@ -100,7 +101,7 @@ class AccountMixin(ResourceMixin):
         market_id: str,
         ticket_id: str,
         *,
-        kind: str = "video_gacha",
+        kind: LossGachaClaimKind = "video_gacha",
     ) -> LossGachaClaimResponse:
         return cast(
             LossGachaClaimResponse,
