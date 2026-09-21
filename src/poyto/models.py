@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import os
+import typing
 from dataclasses import dataclass
-from typing import Any, Literal, TypedDict
+from typing import Any, TypedDict
 
 
-LossGachaClaimKind = Literal["video_gacha", "instant_point", "video_coin"]
+LossGachaClaimKind = typing.Literal["video_gacha", "instant_point", "video_coin"]
 LOSS_GACHA_CLAIM_KINDS: tuple[LossGachaClaimKind, ...] = (
     "video_gacha",
     "instant_point",
