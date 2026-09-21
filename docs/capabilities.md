@@ -99,6 +99,12 @@ Implemented wrappers cover profile, balances, portfolio, portfolio history, bala
 
 Primary implementation footprint: `resources/account.py` (188 lines), plus transport/session infrastructure.
 
+## Loss gacha recovery
+
+`claim_loss_gacha()` keeps `video_gacha` as the default, but its `kind` parameter is now typed as the observed three-value set: `video_gacha`, `instant_point`, and `video_coin`. The CLI exposes the same three choices, and the MCP tool schema publishes them as an enum for AI clients.
+
+Observed state handling includes `loss_gacha_status.mode == "fallback"`; in that state `instant_point` is the appropriate immediate point-recovery claim kind, while `video_gacha` is rejected with `invalid_kind_for_state`. `instant_point` is not the rewarded-ad gacha flow. `video_coin` is used only when the current POYP state supports coin receipt. Server state remains authoritative for claim eligibility and which supported kind is currently valid.
+
 ## Ad rewards
 
 `claim_ad_reward(source="watch_ad")` is a first-class operation.
