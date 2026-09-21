@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 
+from .models import LOSS_GACHA_CLAIM_KINDS
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="poyto", description="Poyto — unofficial POYP API CLI")
@@ -132,7 +134,7 @@ def build_parser() -> argparse.ArgumentParser:
     loss_claim = sub.add_parser("loss-gacha-claim")
     loss_claim.add_argument("market_id")
     loss_claim.add_argument("ticket_id")
-    loss_claim.add_argument("--kind", default="video_gacha")
+    loss_claim.add_argument("--kind", choices=LOSS_GACHA_CLAIM_KINDS, default="video_gacha")
     loss_claim.add_argument("--yes", action="store_true")
 
     user = sub.add_parser("user")

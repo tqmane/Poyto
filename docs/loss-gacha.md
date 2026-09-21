@@ -21,7 +21,8 @@ Observed status examples include:
 }
 ```
 
-Other observed states include `mode="claimed"` with `reason="already_claimed"` and `mode="none"` with `reason="winner_not_eligible"`.
+Other observed states include `mode="claimed"` with `reason="already_claimed"`,
+`mode="none"` with `reason="winner_not_eligible"`, and `mode="fallback"`.
 
 If the market is eligible, create a short-lived ticket:
 
@@ -40,7 +41,13 @@ Observed response shape:
 
 The observed ticket lifetime was about five minutes. Treat `expiresAt` as authoritative rather than assuming a fixed lifetime.
 
-After the service's required rewarded flow has legitimately completed, claim with that ticket:
+After the service's required reward flow has legitimately completed, claim with that ticket. The observed claim `kind` values are:
+
+- `video_gacha` — normal loss-gacha flow; this remains the default for backward compatibility.
+- `instant_point` — immediate point recovery used when `loss_gacha_status.mode == "fallback"`. This is not the rewarded-ad gacha flow.
+- `video_coin` — coin receipt for POYP states that support that claim kind.
+
+For the normal flow:
 
 ```python
 result = client.claim_loss_gacha(
@@ -49,6 +56,21 @@ result = client.claim_loss_gacha(
     kind="video_gacha",
 )
 ```
+
+For a fallback state:
+
+```python
+status = client.loss_gacha_status("MARKET_ID")
+if status["mode"] == "fallback":
+    result = client.claim_loss_gacha(
+        "MARKET_ID",
+        ticket["ticketId"],
+        kind="instant_point",
+    )
+```
+
+When POYP reports `mode="fallback"`, sending `kind="video_gacha"` is rejected with
+`invalid_kind_for_state`; use `instant_point` instead.
 
 Observed success shape:
 
@@ -69,9 +91,11 @@ Those values are one observation, not universal reward constants.
 poyto loss-gacha-status MARKET_ID
 poyto loss-gacha-ticket MARKET_ID --yes
 poyto loss-gacha-claim MARKET_ID TICKET_ID --kind video_gacha --yes
+poyto loss-gacha-claim MARKET_ID TICKET_ID --kind instant_point --yes
+poyto loss-gacha-claim MARKET_ID TICKET_ID --kind video_coin --yes
 ```
 
-Ticket creation and claim are state-changing commands and therefore require `--yes`.
+`--kind` accepts only `video_gacha`, `instant_point`, or `video_coin`. Ticket creation and claim are state-changing commands and therefore require `--yes`.
 
 ## MCP / AI harnesses
 
@@ -81,8 +105,8 @@ The optional MCP server exposes:
 - `loss_gacha_ticket`
 - `loss_gacha_claim`
 
-The two mutation tools require `confirm=true`.
+The two mutation tools require `confirm=true`. `loss_gacha_claim.kind` is exposed as a three-value enum in the MCP tool schema so an AI client can distinguish normal `video_gacha`, fallback `instant_point`, and supported `video_coin` claims. The tool description also calls out the `fallback` → `instant_point` rule.
 
 ## Important boundary
 
-Poyto exposes only the observed POYP API operations. It does not fabricate rewarded-ad completion callbacks, provider proof, eligibility state, or anti-abuse signals. A claim should only be attempted after the service's legitimate reward flow has completed and while the ticket is valid.
+Poyto exposes only the observed POYP API operations. It does not fabricate rewarded-ad completion callbacks, provider proof, eligibility state, or anti-abuse signals. A claim should only be attempted after the service's legitimate reward flow has completed and while the ticket is valid. Server state remains authoritative for whether a particular claim kind is currently accepted.

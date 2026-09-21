@@ -9,6 +9,7 @@ from typing import Any
 
 from .auto import PoytoClient
 from .config import env_bool
+from .models import LossGachaClaimKind
 
 _SESSION_LOCK = threading.Lock()
 
@@ -80,9 +81,7 @@ def build_server(
 
     mcp = FastMCP(
         server_name,
-        instructions=(
-            instructions
-        ),
+        instructions=(instructions),
         host=host,
         port=port,
         **dict(fastmcp_kwargs or {}),
@@ -277,10 +276,18 @@ def build_server(
         def loss_gacha_claim(
             market_id: str,
             ticket_id: str,
-            kind: str = "video_gacha",
+            kind: LossGachaClaimKind = "video_gacha",
             confirm: bool = False,
         ) -> Any:
-            """Claim an eligible loss-gacha reward after the required reward flow has completed."""
+            """Claim an eligible loss-gacha reward using the kind required by current state.
+
+            Use ``video_gacha`` for the normal loss-gacha flow. When
+            ``loss_gacha_status.mode == "fallback"``, use ``instant_point``; sending
+            ``video_gacha`` in fallback is rejected by POYP as ``invalid_kind_for_state``.
+            ``instant_point`` is immediate point recovery, not the rewarded-ad gacha flow.
+            Use ``video_coin`` when the current POYP state supports receiving coins.
+            Requires explicit ``confirm=true``.
+            """
             _require_confirmation(confirm, "loss_gacha_claim")
             return _client_call("claim_loss_gacha", market_id, ticket_id, kind=kind)
 

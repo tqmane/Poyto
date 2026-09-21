@@ -149,6 +149,8 @@ Read/status endpoints exist, but there is insufficient evidence for arbitrary mu
 
 Supported daily claims are `claim_login_bonus` (POST login-streak/claim) and `claim_daily_trade` / `claim_mission(slug)` (POST missions slug claim), verified live on 2026-09-16 for login-streak and daily_trade. Other mission slugs share the APK-static route pattern but their eligibility and responses remain server-defined.
 
+For loss-gacha claims, the observed `kind` values are `video_gacha`, `instant_point`, and `video_coin`. The observed fallback mapping is `mode="fallback"` → `instant_point`; `video_gacha` in that state can return `invalid_kind_for_state`. This does not establish every possible loss-gacha mode, transition, eligibility rule, reward amount, or complete error schema, and `video_coin` remains valid only when the current POYP state supports coin receipt.
+
 Do not assume methods for:
 
 - completing an arbitrary mission without established eligibility evidence
